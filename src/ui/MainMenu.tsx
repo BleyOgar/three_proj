@@ -39,7 +39,10 @@ export const MainMenu = observer(() => {
 
   if (!account) return null;
 
-  const findGameDisabled = clientStates.groupMembers.some((m) => m.state === 3) || clientStates.group?.creator_id !== clientStates.userId;
+  const findGameDisabled =
+    clientStates.groupMembers.some((m) => m.state === 3) ||
+    (clientStates.group && clientStates.group?.creator_id !== clientStates.userId) ||
+    Boolean(clientStates.matchmakerTicker);
 
   const handleFindGameClick = async () => {
     await startFindGame();

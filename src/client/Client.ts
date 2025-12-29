@@ -3,6 +3,7 @@ import {
   Friend,
   Group,
   GroupUser,
+  MatchmakerMatched,
   MatchmakerTicket,
   Notification,
   Party,
@@ -39,6 +40,7 @@ class ClientStates {
   party: Party | undefined;
   partySize: number = 0;
   matchmakerTicker: string | undefined;
+  match: MatchmakerMatched | undefined;
 
   userId: string | undefined;
   friends: Friend[] | undefined;
@@ -200,6 +202,9 @@ export const setupSocket = async () => {
           await socket.joinParty((notification.content as any).partyId);
           break;
       }
+    };
+    socket.onmatchmakermatched = (mm: MatchmakerMatched) => {
+      clientStates.match = mm;
     };
     socket.onparty = (p: Party) => {
       console.log("On party: ", p);
