@@ -14,7 +14,8 @@ export default class ThirdPersonCamera {
   private minPitch = -Math.PI / 2;
   private maxPitch = Math.PI / 2 - 0.1;
 
-  private isRotating = false;
+  private isLMB = false;
+  private isRMB = false;
   private mouseSensitivity = 0.002;
 
   private offset = new THREE.Vector3(0, 1.5, 0); // высота над персонажем
@@ -41,20 +42,22 @@ export default class ThirdPersonCamera {
 
   private onMouseDown = (event: MouseEvent): void => {
     if (event.button === 2 || event.button === 0) {
+      if (event.button === 2) this.isRMB = true;
+      if (event.button === 0) this.isLMB = true;
       this.renderer.domElement.requestPointerLock();
-      this.isRotating = true;
     }
   };
 
   private onMouseUp = (event: MouseEvent): void => {
     if (event.button === 2 || event.button === 0) {
-      document.exitPointerLock();
-      this.isRotating = false;
+      if (event.button === 2) this.isRMB = false;
+      if (event.button === 0) this.isLMB = false;
+      if (!this.isLMB && !this.isRMB) document.exitPointerLock();
     }
   };
 
   private onMouseMove = (event: MouseEvent): void => {
-    if (!this.isRotating) return;
+    if (!this.isLMB && !this.isRMB) return;
 
     this.yaw -= event.movementX * this.mouseSensitivity;
     this.pitch -= event.movementY * this.mouseSensitivity;
