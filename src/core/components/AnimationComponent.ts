@@ -55,6 +55,7 @@ export default class AnimationComponent extends Component {
         action.stop();
       }
     }
+    this.mixer?.update(delta);
   }
 
   private mesh: Object3D | undefined;

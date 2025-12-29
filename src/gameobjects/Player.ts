@@ -17,6 +17,8 @@ export default class Player extends NetworkComponent {
 
   private _lastDirection: Three.Vector3 = new Three.Vector3(0, 0, 1);
 
+  private _threeDirection: Three.Vector3 = new Three.Vector3();
+
   private body: BodyComponent | undefined;
   private anim: AnimationComponent | undefined;
 
@@ -27,6 +29,7 @@ export default class Player extends NetworkComponent {
   public override async start(): Promise<void> {
     this.body = this.gameObject.findComponentOfType(BodyComponent);
     this.anim = this.gameObject.findComponentOfType(AnimationComponent);
+    console.log("ANIM", this.anim);
     const mesh = this.gameObject.findComponentOfType(MeshComponent)?.mesh;
     if (mesh) {
       this._camera = new ThirdPersonCamera(this.renderer, this.camera, mesh);
@@ -35,6 +38,13 @@ export default class Player extends NetworkComponent {
   }
 
   public override update(delta: number): void {
+    this.handleCamera(delta);
+    this.handleInputMovement(delta);
+    this.handleAnimations(delta);
+  }
+
+  private handleCamera(delta: number) {
+    if (!this.isOwner()) return;
     this._camera!.update(delta);
 
     if (Input.isMouseButtonPressed(2)) {
@@ -46,10 +56,13 @@ export default class Player extends NetworkComponent {
       const yaw = Math.atan2(direction.x, direction.z);
       const quat = new Cannon.Quaternion();
       quat.setFromEuler(0, yaw, 0, "YZX");
-      this.transform.rotation.copy(quat);
+      this.transform.rotation = quat;
       this._lastDirection.copy(direction);
     }
+  }
 
+  private handleInputMovement(delta: number) {
+    if (!this.isOwner()) return;
     const right = new Three.Vector3();
     right.crossVectors(this._lastDirection, up).normalize();
     this._horizontal = Input.getAxis("KeyA", "KeyD");
@@ -62,7 +75,7 @@ export default class Player extends NetworkComponent {
     const dir = new Three.Vector3();
     dir.add(right.multiplyScalar(this._horizontal)).add(this._lastDirection.clone().multiplyScalar(this._vertical)).normalize();
 
-    const threeDir = this._lastDirection
+    this._threeDirection = this._lastDirection
       .clone()
       .multiplyScalar(this._vertical)
       .add(right.multiplyScalar(Math.abs(this._horizontal)))
@@ -70,12 +83,14 @@ export default class Player extends NetworkComponent {
       .normalize()
       .multiplyScalar(this._moveSpeed);
 
-    const cannonDir = toCannonVector3(threeDir);
+    const cannonDir = toCannonVector3(this._threeDirection);
     this.body!.body.velocity.x = cannonDir.x;
     this.body!.body.velocity.z = cannonDir.z;
+  }
 
-    if (threeDir.lengthSq() > 0.0001) {
-      const normalisedDir = threeDir.clone().normalize();
+  private handleAnimations(delta: number) {
+    if (this._threeDirection.lengthSq() > 0.0001) {
+      const normalisedDir = this._threeDirection.clone().normalize();
       const dotForward = normalisedDir.dot(this._lastDirection);
       const crossP = normalisedDir.cross(this._lastDirection);
 

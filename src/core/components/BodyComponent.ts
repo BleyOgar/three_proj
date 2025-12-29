@@ -1,4 +1,4 @@
-import { Body, World } from "cannon";
+import { Body, Quaternion, World } from "cannon";
 import Component from "./Component";
 
 export default class BodyComponent extends Component {
@@ -14,8 +14,8 @@ export default class BodyComponent extends Component {
     const { x: tx, y: ty, z: tz } = this.transform.position;
     const { x: tqx, y: tqy, z: tqz, w: tqw } = this.transform.rotation;
 
-    if (this.transform.dirty["position"]) this.body.position.set(tx, ty, tz);
-    if (this.transform.dirty["rotation"]) this.body.quaternion.set(tqx, tqy, tqz, tqw);
+    if (this.transform.isDirty("position")) this.body.position.set(tx, ty, tz);
+    if (this.transform.isDirty("rotation")) this.body.quaternion.copy(new Quaternion(tqx, tqy, tqz, tqw));
 
     const { x, y, z } = this.body.position;
     const { x: qx, y: qy, z: qz, w } = this.body.quaternion;
