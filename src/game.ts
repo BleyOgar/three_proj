@@ -1,7 +1,7 @@
-import { MatchmakerMatched } from "@heroiclabs/nakama-js";
+import { Match } from "@heroiclabs/nakama-js";
 import * as Cannon from "cannon";
+import { toJS } from "mobx";
 import * as Three from "three";
-import { clientStates } from "./client/Client";
 import collections from "./core/collections";
 import AnimationComponent from "./core/components/AnimationComponent";
 import BodyComponent from "./core/components/BodyComponent";
@@ -12,7 +12,7 @@ import Input from "./core/Input";
 import { NoFrictionContactMaterial, noFrictionMaterial } from "./core/PhysicsMaterials";
 import Player from "./gameobjects/Player";
 
-export const game = async (gameContainer: HTMLDivElement, match: MatchmakerMatched) => {
+export const game = async (gameContainer: HTMLDivElement, match: Match) => {
   // Добавление rendeder в сцену
   const renderer = new Three.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -96,17 +96,7 @@ export const game = async (gameContainer: HTMLDivElement, match: MatchmakerMatch
   const teamB_spawnPonts = [new Three.Vector3(50, 0, -50), new Three.Vector3(70, 0, -50)];
   const noPartySpawnPoints = [teamA_spawnPonts[0], teamB_spawnPonts[0]];
 
-  for (const user of match.users) {
-    let playerSpawnPoint: Three.Vector3;
-    if (clientStates.party) {
-      console.log(clientStates.party.presences);
-      playerSpawnPoint = teamA_spawnPonts[0];
-    } else {
-      const posIndex = match.users.findIndex((u) => u.presence.user_id === user.presence.user_id);
-      console.log(posIndex, noPartySpawnPoints);
-      playerSpawnPoint = noPartySpawnPoints[posIndex];
-    }
-
+  const spawnPlayer = async (userId: string, spawnPoint: Three.Vector3) => {
     const playerObj = await GameObject.NewBuilder(world, scene)
       .addComponent(new MeshComponent(scene, "models/warrior-attack.fbx"))
       .addComponent(
@@ -132,15 +122,18 @@ export const game = async (gameContainer: HTMLDivElement, match: MatchmakerMatch
           runLeft: "models/warrior-run-left.fbx",
         })
       )
-      .addComponent(new Player(user.presence.user_id, camera, renderer))
+      .addComponent(new Player(userId, camera, renderer))
       .build();
 
-    playerObj.transform.position = playerSpawnPoint;
+    playerObj.transform.position = spawnPoint;
+  };
 
-    // Загрузка 3D война
-    // Loader3D.loadMeshFbx("models/warrior-attack.fbx").then((model) => {
-    //   const player = new Player(user.presence.user_id, camera, renderer, world, scene, model);
-    //   player.position = playerSpawnPoint;
-    // });
+  console.log(`Match`, toJS(match));
+  for (const user of match.presences || []) {
+    let playerSpawnPoint: Three.Vector3;
+    playerSpawnPoint = noPartySpawnPoints.shift()!;
+    spawnPlayer(user.user_id, playerSpawnPoint);
   }
+
+  spawnPlayer(match.self.user_id, noPartySpawnPoints.shift()!);
 };

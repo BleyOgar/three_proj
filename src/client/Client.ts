@@ -1,18 +1,22 @@
-import {
-  Client,
-  Friend,
-  Group,
-  GroupUser,
-  MatchmakerMatched,
-  MatchmakerTicket,
-  Notification,
-  Party,
-  PartyJoinRequest,
-  PartyLeader,
-  PartyMatchmakerTicket,
-  PartyPresenceEvent,
-  Session,
-} from "@heroiclabs/nakama-js";
+import
+  {
+    Client,
+    Friend,
+    Group,
+    GroupUser,
+    Match,
+    MatchData,
+    MatchmakerMatched,
+    MatchmakerTicket,
+    MatchPresenceEvent,
+    Notification,
+    Party,
+    PartyJoinRequest,
+    PartyLeader,
+    PartyMatchmakerTicket,
+    PartyPresenceEvent,
+    Session,
+  } from "@heroiclabs/nakama-js";
 import { makeAutoObservable } from "mobx";
 import { toast } from "sonner";
 import { generateUUID } from "three/src/math/MathUtils.js";
@@ -27,7 +31,6 @@ export interface ClientResponse {
 const client = new Client("defaultkey", "192.168.101.174", "7350", false, 10000);
 const socket = client.createSocket(false, true);
 let session: Session | undefined;
-let partyFullResolve: VoidFunction | undefined;
 
 class ClientStates {
   token: string | undefined;
@@ -40,7 +43,7 @@ class ClientStates {
   party: Party | undefined;
   partySize: number = 0;
   matchmakerTicker: string | undefined;
-  match: MatchmakerMatched | undefined;
+  match: Match | undefined;
 
   userId: string | undefined;
   friends: Friend[] | undefined;
@@ -53,6 +56,7 @@ class ClientStates {
 }
 
 const recoverSession = async () => {
+  return;
   const lsTokens = localStorage.getItem("session");
   if (lsTokens) {
     const { token, refresh_token, refresh_expires_at } = JSON.parse(lsTokens);
@@ -133,6 +137,7 @@ const onLogin = async (token: string, refresh_token: string, refresh_expires_at:
 };
 
 export const logout = async () => {
+  console.log("=======  LOGOUT =======");
   if (!session) return;
   try {
     if (socket) {
@@ -148,11 +153,13 @@ export const logout = async () => {
 };
 
 export const disconnectSocket = () => {
+  console.log("=======  SOCKET DISCONNECT  =========");
   if (!socket) return;
   socket.disconnect(true);
 };
 
 export const setupSocket = async () => {
+  console.log("==========  Invoke setup socket!!!  ============");
   if (!session) return Promise.reject("");
   try {
     const socketSession = await socket.connect(session, true);
@@ -203,14 +210,27 @@ export const setupSocket = async () => {
           break;
       }
     };
-    socket.onmatchmakermatched = (mm: MatchmakerMatched) => {
-      clientStates.match = mm;
+
+    socket.onmatchmakermatched = async (mm: MatchmakerMatched) => {
+      const match = await socket.joinMatch(mm.match_id, mm.token);
+      console.log("Match joined:", match);
+      clientStates.match = match;
     };
+
+    socket.onmatchpresence = async (mp: MatchPresenceEvent) => {
+      console.log(`Match presense: joins: ${mp.joins}, leaves: ${mp.leaves}`);
+    };
+
+    socket.onmatchdata = async (md: MatchData) => {
+      console.log("Match data: ", md);
+    };
+
     socket.onparty = (p: Party) => {
       console.log("On party: ", p);
       clientStates.party = p;
       clientStates.partySize = 0;
     };
+
     socket.onpartyjoinrequest = async (req: PartyJoinRequest) => {
       console.log("On party join request: ", req);
       for (const presence of req.presences) {
@@ -221,23 +241,28 @@ export const setupSocket = async () => {
         await socket.acceptPartyMember(req.party_id, presence);
       }
     };
+
     socket.onpartyleader = async (pl: PartyLeader) => {
       await socket.closeParty(pl.party_id);
       if (clientStates.matchmakerTicker) await socket.removeMatchmakerParty(pl.party_id, clientStates.matchmakerTicker);
     };
+
     socket.onpartyclose = async (pc) => {
       console.log("On party close: ", pc);
       clientStates.party = undefined;
       clientStates.partySize = 0;
       clientStates.matchmakerTicker = undefined;
     };
+
     socket.onpartydata = (pd) => {
       console.log("On party data: ", pd);
     };
+
     socket.onpartymatchmakerticket = (pmt: PartyMatchmakerTicket) => {
       console.log("On party matchmaiker ticket: ", pmt);
       clientStates.matchmakerTicker = pmt.ticket;
     };
+
     socket.onpartypresence = async (presence: PartyPresenceEvent) => {
       if (clientStates.group?.creator_id !== clientStates.userId) return;
       if (presence.party_id !== clientStates.party?.party_id) return;
@@ -255,6 +280,7 @@ export const setupSocket = async () => {
       console.log("On party presence: ", presence);
       console.log("Party size", clientStates.partySize);
     };
+
     socket.onmatchmakerticket = (mt: MatchmakerTicket) => {
       console.log("On matchmaker ticker: ", mt.ticket);
       clientStates.matchmakerTicker = mt.ticket;
@@ -454,7 +480,6 @@ export const startFindGame = async () => {
     const party = await socket.createParty(false, clientStates.groupMembers.length);
     clientStates.party = party;
     clientStates.partySize = 0;
-    // clientStates.partySize = party.presences.length;
     await client.rpc(session, "create_party_js", { partyId: party.party_id });
   } else {
     const ticket = await socket.addMatchmaker("*", 2, 2);

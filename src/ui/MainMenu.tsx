@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { ApiAccount, clientStates, disconnectSocket, getAccountInfo, startFindGame, stopFindGame } from "../client/Client";
+import { ApiAccount, clientStates, getAccountInfo, startFindGame, stopFindGame } from "../client/Client";
 import { Button } from "../components/ui/button";
 import { SideBar } from "./SideBar";
 import { NavBar } from "./navbar/NavBar";
@@ -13,9 +13,6 @@ export const MainMenu = observer(() => {
       console.log(info);
       setAccount(info);
     });
-    return () => {
-      disconnectSocket();
-    };
   }, []);
   const [findGameTime, setFindGameTime] = useState<number>(0);
   const timer = useRef<any>(null);
