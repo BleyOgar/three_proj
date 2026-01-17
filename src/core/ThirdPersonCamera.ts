@@ -1,98 +1,98 @@
 import * as THREE from "three";
 
 export default class ThirdPersonCamera {
-  private camera: THREE.PerspectiveCamera;
-  private target: THREE.Object3D;
-  private renderer: THREE.WebGLRenderer;
+    private camera: THREE.PerspectiveCamera;
+    private target: THREE.Object3D;
+    private renderer: THREE.WebGLRenderer;
 
-  private distance = 5;
-  private minDistance = 2;
-  private maxDistance = 10;
+    private distance = 5;
+    private minDistance = 2;
+    private maxDistance = 10;
 
-  private yaw = 0;
-  private pitch = 0.3;
-  private minPitch = -Math.PI / 2;
-  private maxPitch = Math.PI / 2 - 0.1;
+    private yaw = 0;
+    private pitch = 0.3;
+    private minPitch = -Math.PI / 2;
+    private maxPitch = Math.PI / 2 - 0.1;
 
-  private isLMB = false;
-  private isRMB = false;
-  private mouseSensitivity = 0.002;
+    private isLMB = false;
+    private isRMB = false;
+    private mouseSensitivity = 0.002;
 
-  private offset = new THREE.Vector3(0, 1.5, 0); // высота над персонажем
-  private currentPosition = new THREE.Vector3();
+    private offset = new THREE.Vector3(0, 1.5, 0); // высота над персонажем
+    private currentPosition = new THREE.Vector3();
 
-  constructor(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, target: THREE.Object3D) {
-    this.renderer = renderer;
-    this.camera = camera;
-    this.target = target;
+    constructor(renderer: THREE.WebGLRenderer, camera: THREE.PerspectiveCamera, target: THREE.Object3D) {
+        this.renderer = renderer;
+        this.camera = camera;
+        this.target = target;
 
-    this.addEventListeners();
-  }
-
-  private addEventListeners(): void {
-    const el = this.renderer.domElement;
-    el.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-    });
-    el.addEventListener("mousedown", this.onMouseDown.bind(this));
-    el.addEventListener("mouseup", this.onMouseUp.bind(this));
-    el.addEventListener("mousemove", this.onMouseMove.bind(this));
-    el.addEventListener("wheel", this.onMouseWheel.bind(this), { passive: true });
-  }
-
-  private onMouseDown = (event: MouseEvent): void => {
-    if (event.button === 2 || event.button === 0) {
-      if (event.button === 2) this.isRMB = true;
-      if (event.button === 0) this.isLMB = true;
-      this.renderer.domElement.requestPointerLock();
+        this.addEventListeners();
     }
-  };
 
-  private onMouseUp = (event: MouseEvent): void => {
-    if (event.button === 2 || event.button === 0) {
-      if (event.button === 2) this.isRMB = false;
-      if (event.button === 0) this.isLMB = false;
-      if (!this.isLMB && !this.isRMB) document.exitPointerLock();
+    private addEventListeners(): void {
+        const el = this.renderer.domElement;
+        el.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+        });
+        el.addEventListener("mousedown", this.onMouseDown.bind(this));
+        el.addEventListener("mouseup", this.onMouseUp.bind(this));
+        el.addEventListener("mousemove", this.onMouseMove.bind(this));
+        el.addEventListener("wheel", this.onMouseWheel.bind(this), {passive: true});
     }
-  };
 
-  private onMouseMove = (event: MouseEvent): void => {
-    if (!this.isLMB && !this.isRMB) return;
+    private onMouseDown = (event: MouseEvent): void => {
+        if (event.button === 2 || event.button === 0) {
+            if (event.button === 2) this.isRMB = true;
+            if (event.button === 0) this.isLMB = true;
+            this.renderer.domElement.requestPointerLock();
+        }
+    };
 
-    this.yaw -= event.movementX * this.mouseSensitivity;
-    this.pitch -= event.movementY * this.mouseSensitivity;
+    private onMouseUp = (event: MouseEvent): void => {
+        if (event.button === 2 || event.button === 0) {
+            if (event.button === 2) this.isRMB = false;
+            if (event.button === 0) this.isLMB = false;
+            if (!this.isLMB && !this.isRMB) document.exitPointerLock();
+        }
+    };
 
-    this.pitch = THREE.MathUtils.clamp(this.pitch, this.minPitch, this.maxPitch);
-  };
+    private onMouseMove = (event: MouseEvent): void => {
+        if (!this.isLMB && !this.isRMB) return;
 
-  private onMouseWheel = (event: WheelEvent): void => {
-    this.distance += event.deltaY * 0.01;
-    this.distance = THREE.MathUtils.clamp(this.distance, this.minDistance, this.maxDistance);
-  };
+        this.yaw -= event.movementX * this.mouseSensitivity;
+        this.pitch -= event.movementY * this.mouseSensitivity;
 
-  public update(deltaTime: number): void {
-    const targetPosition = new THREE.Vector3().copy(this.target.position).add(this.offset);
+        this.pitch = THREE.MathUtils.clamp(this.pitch, this.minPitch, this.maxPitch);
+    };
 
-    // сферические координаты
-    const x = targetPosition.x + this.distance * Math.cos(this.pitch) * Math.sin(this.yaw);
-    const y = targetPosition.y - this.distance * Math.sin(this.pitch);
-    const z = targetPosition.z + this.distance * Math.cos(this.pitch) * Math.cos(this.yaw);
+    private onMouseWheel = (event: WheelEvent): void => {
+        this.distance += event.deltaY * 0.01;
+        this.distance = THREE.MathUtils.clamp(this.distance, this.minDistance, this.maxDistance);
+    };
 
-    const desiredPosition = new THREE.Vector3(x, y, z);
+    public update(_: number): void {
+        const targetPosition = new THREE.Vector3().copy(this.target.position).add(this.offset);
 
-    // сглаживание
-    // this.currentPosition.lerp(desiredPosition, 1 - Math.exp(-deltaTime * 10));
-    this.currentPosition = desiredPosition;
+        // сферические координаты
+        const x = targetPosition.x + this.distance * Math.cos(this.pitch) * Math.sin(this.yaw);
+        const y = targetPosition.y - this.distance * Math.sin(this.pitch);
+        const z = targetPosition.z + this.distance * Math.cos(this.pitch) * Math.cos(this.yaw);
 
-    this.camera.position.copy(this.currentPosition);
-    this.camera.lookAt(targetPosition);
-  }
+        const desiredPosition = new THREE.Vector3(x, y, z);
 
-  public dispose(): void {
-    const el = this.renderer.domElement;
-    el.removeEventListener("mousedown", this.onMouseDown.bind(this));
-    el.removeEventListener("mouseup", this.onMouseUp.bind(this));
-    el.removeEventListener("mousemove", this.onMouseMove.bind(this));
-    el.removeEventListener("wheel", this.onMouseWheel.bind(this));
-  }
+        // сглаживание
+        // this.currentPosition.lerp(desiredPosition, 1 - Math.exp(-deltaTime * 10));
+        this.currentPosition = desiredPosition;
+
+        this.camera.position.copy(this.currentPosition);
+        this.camera.lookAt(targetPosition);
+    }
+
+    public dispose(): void {
+        const el = this.renderer.domElement;
+        el.removeEventListener("mousedown", this.onMouseDown.bind(this));
+        el.removeEventListener("mouseup", this.onMouseUp.bind(this));
+        el.removeEventListener("mousemove", this.onMouseMove.bind(this));
+        el.removeEventListener("wheel", this.onMouseWheel.bind(this));
+    }
 }
