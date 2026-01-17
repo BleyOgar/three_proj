@@ -1,11 +1,11 @@
 import * as Cannon from "cannon";
 import * as Three from "three";
-import Input from "../core/Input";
-import NetworkComponent from "../core/NetworkComponent";
-import ThirdPersonCamera from "../core/ThirdPersonCamera";
-import AnimationComponent from "../core/components/AnimationComponent";
-import BodyComponent from "../core/components/BodyComponent";
-import MeshComponent from "../core/components/MeshComponent";
+import Input from "@/game/core/Input.ts";
+import NetworkComponent from "@/game/core/components/NetworkComponent.ts";
+import ThirdPersonCamera from "@/game/core/ThirdPersonCamera.ts";
+import AnimationComponent from "@/game/core/components/AnimationComponent.ts";
+import BodyComponent from "@/game/core/components/BodyComponent.ts";
+import MeshComponent from "@/game/core/components/MeshComponent.ts";
 
 const up = new Three.Vector3(0, 1, 0);
 
@@ -27,10 +27,10 @@ export default class Player extends NetworkComponent {
     }
 
     public override async start(): Promise<void> {
-        this.body = this.gameObject.findComponentOfType(BodyComponent);
-        this.anim = this.gameObject.findComponentOfType(AnimationComponent);
+        this.body = this.gameObject.getComponentOfType(BodyComponent);
+        this.anim = this.gameObject.getComponentOfType(AnimationComponent);
         console.log("ANIM", this.anim);
-        const mesh = this.gameObject.findComponentOfType(MeshComponent)?.mesh;
+        const mesh = this.gameObject.getComponentOfType(MeshComponent)?.mesh;
         if (mesh) {
             this._camera = new ThirdPersonCamera(this.renderer, this.camera, mesh);
         }

@@ -1,5 +1,5 @@
-import GameObject from "../GameObject";
-import TransformComponent from "./TransformComponent";
+import GameObject from "../GameObject.ts";
+import TransformComponent from "./TransformComponent.ts";
 
 export default abstract class Component {
     public active: boolean = true;

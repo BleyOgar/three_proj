@@ -1,12 +1,12 @@
-import {Object3D, Scene} from "three";
-import Loader3D from "../Loader3D";
-import Component from "./Component";
+import {Object3D} from "three";
+import Loader3D from "../Loader3D.ts";
+import Component from "./Component.ts";
 
 export default class MeshComponent extends Component {
     public mesh: Object3D | undefined;
-    private meshLink: string | undefined;
+    private readonly meshLink: string | undefined;
 
-    public constructor(private scene: Scene, mesh: Object3D | string) {
+    public constructor(mesh: Object3D | string) {
         super();
         if (typeof mesh === "string") this.meshLink = mesh;
     }
@@ -14,8 +14,9 @@ export default class MeshComponent extends Component {
     public override async awake(): Promise<void> {
         if (this.meshLink) {
             this.mesh = await Loader3D.loadMeshFbx(this.meshLink);
-            this.scene.add(this.mesh);
+            this.gameObject.scene.add(this.mesh);
         }
+        this.transform.obj = this.mesh
     }
 
     public update(): void {

@@ -1,4 +1,4 @@
-import Component from "./components/Component";
+import Component from "./Component.ts";
 import {clientStates} from "@/ui/store/client-states.ts";
 
 export default class NetworkComponent extends Component {
